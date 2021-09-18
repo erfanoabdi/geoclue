@@ -43,6 +43,7 @@ struct _GClueConfigPrivate
         gboolean enable_cdma_source;
         gboolean enable_modem_gps_source;
         gboolean enable_wifi_source;
+        gboolean enable_hybris_source;
         char *wifi_submit_url;
         char *wifi_submit_nick;
 
@@ -121,7 +122,7 @@ load_app_configs (GClueConfig *config)
 {
         const char *known_groups[] = { "agent", "wifi", "3g", "cdma",
                                        "modem-gps", "network-nmea",
-                                       NULL };
+                                       "hybris", NULL };
         GClueConfigPrivate *priv = config->priv;
         gsize num_groups = 0, i;
         char **groups;
@@ -301,6 +302,13 @@ load_network_nmea_config (GClueConfig *config)
 }
 
 static void
+load_network_hybris_config (GClueConfig *config)
+{
+        config->priv->enable_hybris_source =
+                load_enable_source_config (config, "hybris");
+}
+
+static void
 gclue_config_init (GClueConfig *config)
 {
         GError *error = NULL;
@@ -329,6 +337,7 @@ gclue_config_init (GClueConfig *config)
         load_cdma_config (config);
         load_modem_gps_config (config);
         load_network_nmea_config (config);
+        load_network_hybris_config (config);
 }
 
 GClueConfig *
@@ -490,6 +499,12 @@ gboolean
 gclue_config_get_enable_nmea_source (GClueConfig *config)
 {
         return config->priv->enable_nmea_source;
+}
+
+gboolean
+gclue_config_get_enable_hybris_source(GClueConfig *config)
+{
+        return config->priv->enable_hybris_source;
 }
 
 void

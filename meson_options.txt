@@ -19,6 +19,9 @@ option('modem-gps-source',
 option('nmea-source',
        type: 'boolean', value: true,
        description: 'Enable network NMEA source (requires Avahi libraries)')
+option('hybris-source',
+       type: 'boolean', value: true,
+       description: 'Enable Android HAL GPS source (requires gbinder)')
 option('enable-backend',
        type: 'boolean', value: true,
        description: 'Enable backend (the geoclue service)')

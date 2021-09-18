@@ -85,6 +85,8 @@ gboolean            gclue_config_get_enable_cdma_source (GClueConfig     *config
 gboolean            gclue_config_get_enable_modem_gps_source
                                                         (GClueConfig     *config);
 gboolean            gclue_config_get_enable_nmea_source (GClueConfig     *config);
+gboolean            gclue_config_get_enable_hybris_source
+                                                        (GClueConfig     *config);
 void                gclue_config_set_wifi_submit_data   (GClueConfig     *config,
                                                          gboolean         submit);
 
