@@ -1,4 +1,4 @@
-geoclue-2.0 (2.5.6-1mobian1) unstable; urgency=medium
+geoclue-2.0 (2.5.7) unstable; urgency=medium
 
   * Downstream fix for #132 - Use tracking area code (TAC) as the LAC when in
     LTE mode matching Ichneaa docs
