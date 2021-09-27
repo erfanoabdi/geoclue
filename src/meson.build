@@ -59,7 +59,14 @@ endif
 
 if get_option('hybris-source')
     geoclue_deps += [ dependency('libgbinder') ]
-    sources += [ 'gclue-hybris-source.h', 'gclue-hybris-source.c' ]
+    sources += [ 'gclue-hybris-source.h',
+                 'gclue-hybris-source.c',
+                 'gclue-hybris-binder-types.h',
+                 'gclue-hybris-binder.c',
+                 'gclue-hybris-binder.h',
+                 'gclue-hybris-types.h',
+                 'gclue-hybris.c',
+                 'gclue-hybris.h' ]
 endif
 
 c_args = [ '-DG_LOG_DOMAIN="Geoclue"' ]

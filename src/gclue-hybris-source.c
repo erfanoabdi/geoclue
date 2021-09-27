@@ -21,12 +21,17 @@
 
 #include <stdlib.h>
 #include <glib.h>
+#include "gclue-hybris-binder.h"
 #include "gclue-hybris-source.h"
+#include "gclue-hybris-types.h"
+#include "gclue-hybris.h"
 #include "gclue-location.h"
 #include "config.h"
 #include "gclue-enum-types.h"
 
 struct _GClueHybrisSourcePrivate {
+        GClueHybris *hybris;
+
         GCancellable *cancellable;
 };
 
@@ -46,11 +51,66 @@ static void
 disconnect_from_service (GClueHybrisSource *source);
 
 static void
+on_location_changed(GObject *gobject,
+                    GParamSpec *pspec,
+                    gpointer user_data)
+{
+        GClueHybris *hybris = GCLUE_HYBRIS(user_data);
+        GClueLocationSource *source = GCLUE_LOCATION_SOURCE(gobject);
+        GClueLocation *location;
+
+        location = gclue_location_source_get_location(source);
+
+        gclue_hybris_gnssInjectLocation(hybris,
+                                        gclue_location_get_latitude(location),
+                                        gclue_location_get_longitude(location),
+                                        gclue_location_get_accuracy(location));
+}
+
+static void
+on_set_location(GClueHybris *hybris,
+                gpointer loc_p,
+                gpointer user_data)
+{
+        GClueHybrisSource *source = GCLUE_HYBRIS_SOURCE(user_data);
+        GClueHybrisLocation *loc = (GClueHybrisLocation *)loc_p;
+
+        GClueLocation *location;
+        location = gclue_location_new_full(loc->latitude,
+                                           loc->longitude,
+                                           loc->accuracy->horizontal,
+                                           loc->speed,
+                                           loc->direction,
+                                           loc->altitude,
+                                           loc->timestamp / 1000,
+                                           "Hybris location");
+
+        gclue_location_source_set_location(GCLUE_LOCATION_SOURCE(source), location);
+}
+
+static void
 connect_to_service (GClueHybrisSource *source)
 {
         GClueHybrisSourcePrivate *priv = source->priv;
 
         g_cancellable_reset (priv->cancellable);
+
+        g_signal_connect(G_OBJECT(source),
+                         "notify::location",
+                         G_CALLBACK(on_location_changed),
+                         priv->hybris);
+
+        g_signal_connect(priv->hybris,
+                         "setLocation",
+                         G_CALLBACK(on_set_location),
+                         source);
+
+        gclue_hybris_gnssSetPositionMode(priv->hybris,
+                                         HYBRIS_GNSS_POSITION_MODE_STANDALONE,
+                                         HYBRIS_GNSS_POSITION_RECURRENCE_PERIODIC,
+                                         1000, 0, 0);
+
+        gclue_hybris_gnssStart(priv->hybris);
 }
 
 static void
@@ -59,6 +119,12 @@ disconnect_from_service (GClueHybrisSource *source)
         GClueHybrisSourcePrivate *priv = source->priv;
 
         g_cancellable_cancel (priv->cancellable);
+
+        g_signal_handlers_disconnect_by_func(G_OBJECT(source),
+                                             G_CALLBACK(on_location_changed),
+                                             priv->hybris);
+
+        gclue_hybris_gnssStop(priv->hybris);
 }
 
 static void
@@ -69,6 +135,7 @@ gclue_hybris_source_finalize (GObject *ghybris)
         G_OBJECT_CLASS (gclue_hybris_source_parent_class)->finalize (ghybris);
 
         g_clear_object (&priv->cancellable);
+        g_clear_object (&priv->hybris);
 }
 
 static void
@@ -94,6 +161,21 @@ gclue_hybris_source_init (GClueHybrisSource *source)
         priv = source->priv;
 
         priv->cancellable = g_cancellable_new ();
+        priv->hybris = gclue_hybris_binder_get_singleton();
+
+        GClueAccuracyLevel level;
+        level = GCLUE_ACCURACY_LEVEL_EXACT;
+        g_debug("Setting accuracy level to %s: %u",
+                G_OBJECT_TYPE_NAME(source), level);
+        g_object_set(G_OBJECT(source),
+                     "available-accuracy-level", level, NULL);
+
+        gclue_hybris_gnssInit(priv->hybris);
+        //gclue_hybris_aGnssInit(priv->hybris);
+        gclue_hybris_gnssNiInit(priv->hybris);
+        //gclue_hybris_aGnssRilInit(priv->hybris);
+        gclue_hybris_gnssXtraInit(priv->hybris);
+        gclue_hybris_gnssDebugInit(priv->hybris);
 }
 
 /**
